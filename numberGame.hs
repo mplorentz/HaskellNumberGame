@@ -1,37 +1,34 @@
 import System.Random
 import Data.Maybe
+import Control.Monad   
 
 main = do
    randomNumberGenerator <- getStdGen
-   let winningNumber = head (randomRs (1, 100) randomNumberGenerator :: [Int])
+   let winningNumber = head (randomRs (1, 10) randomNumberGenerator :: [Int])
    playGame winningNumber
 
 playGame :: Int -> IO ()
 playGame winningNumber = do
-   putStrLn "Instructions"
+   putStrLn "I've chosen a random number between 1 and 100. See if you can guess it!"
+   runRound winningNumber
+ 
+runRound winningNumber = do
    userString <- getLine
    let parsedString = reads userString :: [(Int, String)]
-   getOutputFromUserString winningNumber parsedString
+   let (outputString, nextAction) = processNumber parsedString winningNumber 
+   case outputString of 
+      Just output -> do
+         putStrLn output
+         nextAction
+      _ -> nextAction
 
+processNumber :: [(Int, String)] -> Int -> (Maybe String, IO ())
+processNumber [(userNumber, unparseable)] winningNumber
+   | null unparseable   = outputFromComparingNumbers userNumber winningNumber
+   | otherwise          = (Just "Please enter only numbers", runRound winningNumber)
 
-getOutputFromUserString :: Int -> [(Int, String)] -> IO ()
-getOutputFromUserString winningNumber [(userNumber, unparseable)] 
-   | null unparseable = do
-      let output = getOutputFromUserNumber userNumber winningNumber
-      if Nothing == output
-         then putStrLn "Congratulations! You guessed the correct number."
-         else do
-            putStrLn $ Data.Maybe.fromJust output
-            main
-   | otherwise = throwUnparseableError winningNumber
-getOutputFromUserString winningNumber _ = do throwUnparseableError winningNumber
-
-throwUnparseableError winningNumber = do
-   putStrLn "Please enter only numbers."
-   playGame winningNumber
-
-getOutputFromUserNumber :: (Ord a) => a -> a -> Maybe String
-getOutputFromUserNumber userNumber winningNumber
-   | userNumber < winningNumber = Just "Too low"
-   | userNumber > winningNumber = Just "Too high"
-   | otherwise = Nothing
+outputFromComparingNumbers :: Int -> Int -> (Maybe String, IO ())
+outputFromComparingNumbers userNumber winningNumber
+   | userNumber < winningNumber = (Just "Too low", runRound winningNumber)
+   | userNumber > winningNumber = (Just "Too high", runRound winningNumber)
+   | otherwise = (Nothing, putStrLn "Congratulations! You guessed it!")
