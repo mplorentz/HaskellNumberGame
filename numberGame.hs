@@ -2,19 +2,13 @@ import System.Random
 
 main = do
    randomNumberGenerator <- getStdGen
-   let winningNumber = head (randomRs (1, 10) randomNumberGenerator :: [Int])
-   playGame winningNumber
+   runRound (head (randomRs (1, 10) randomNumberGenerator :: [Int])) "I've chosen a random number between 1 and 100. See if you can guess it!"
 
-playGame winningNumber = do
-   putStrLn "I've chosen a random number between 1 and 100. See if you can guess it!"
-   runRound winningNumber
- 
-runRound winningNumber = do
+runRound winningNumber stringToPrint = do
+   putStrLn stringToPrint
    userString <- getLine
-   let parsedString = reads userString :: [(Int, String)]
-   let (outputString, nextAction) = processNumber parsedString winningNumber 
-   putStrLn outputString
-   nextAction
+   let (outputString, nextAction) = processNumber (reads userString :: [(Int, String)]) winningNumber 
+   nextAction outputString
 
 processNumber [(userNumber, [])] winningNumber = outputFromComparingNumbers userNumber winningNumber 
 processNumber _ winningNumber = ("Please enter only numbers", runRound winningNumber)
@@ -22,4 +16,4 @@ processNumber _ winningNumber = ("Please enter only numbers", runRound winningNu
 outputFromComparingNumbers userNumber winningNumber
    | userNumber < winningNumber = ("Too low", runRound winningNumber)
    | userNumber > winningNumber = ("Too high", runRound winningNumber)
-   | otherwise = ("Congratulations! You guessed it!", return ())
+   | otherwise = (show winningNumber, (\winningNumberString -> putStrLn $ "Congratulations! The number was " ++ winningNumberString ++ "! Like a boss!"))
